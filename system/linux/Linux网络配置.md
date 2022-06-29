@@ -79,6 +79,7 @@ IPV6INIT=no
 ### ping不通网关？
 
 ```shell
+# 先检查网段是否正确，网段正确的情况下依次执行命令
 # 首先清空路由信息
 ip route flush dev eth0(网卡名)
 # 重启网卡
