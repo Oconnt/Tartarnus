@@ -256,6 +256,116 @@ defer 是一种用于延迟执行语句或函数调用的机制，它通常用�
 
 总结起来，在发生 panic 后，当前协程会立即停止执行，并且不会执行当前协程中 panic 后的代码，包括 defer 中的代码。但其他协程中的 defer 块中的代码仍然会执行。如果在当前协程中存在与 panic 对应的 recover 函数，那么 panic 可能会被捕获并转化为 error 类型的返回值，此时协程的执行会从 panic 的位置继续进行，并执行后续的 defer 块中的代码。
 
+### 17、什么是闭包？什么时候需要闭包？
+
+闭包是**函数**和**其引用环境**的组合体，允许函数访问并记住定义时的作用域（即使函数在原始作用域外执行）。简单说：**闭包 = 函数 + 对外部变量的引用**。
+
+**特性：**
+
+1. **记忆环境**：闭包函数能访问定义时的父作用域变量（即使父函数已返回）。
+2. **状态保持**：闭包内的变量是“活的”，多次调用闭包时，这些变量保持最新状态。
+3. **封装性**：闭包提供了一种隐藏变量、暴露操作的方式（类似面向对象中的私有成员）。
+
+
+
+**场景：**
+
+**1. 延迟执行（异步任务）**
+
+当需要在**当前函数退出后**仍访问局部变量时，闭包捕获变量状态：
+
+```
+func asyncTask() {
+    data := "result" // 局部变量
+    go func() {      // 闭包捕获data
+        fmt.Println("Async:", data) // 函数退出后仍能访问data
+    }()
+}
+```
+
+**2. 函数工厂（动态生成函数）**
+
+闭包记住父函数变量，生成**行为不同的新函数**：
+
+```
+func multiplier(factor int) func(int) int {
+    return func(x int) int { // 闭包捕获factor
+        return x * factor
+    }
+}
+// 使用
+double := multiplier(2)
+fmt.Println(double(5)) // 输出10
+```
+
+**3. 中间件/装饰器**
+
+在Web框架中，闭包实现**嵌套逻辑处理**：
+
+```
+func loggerMiddleware(next http.HandlerFunc) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        start := time.Now()
+        next(w, r) // 执行原始处理函数
+        fmt.Printf("请求耗时: %v\n", time.Since(start))
+    }
+}
+```
+
+**4. 控制并发访问（资源隔离）**
+
+闭包为每个goroutine创建**独立变量副本**，避免竞争：
+
+```
+for i := 0; i < 3; i++ {
+    go func(id int) { // 闭包捕获循环变量副本
+        fmt.Printf("Goroutine %d\n", id)
+    }(i) // 显式传参避免共享i
+}
+```
+
+**5. 实现状态保持**
+
+替代类成员变量，闭包内**隐式持有状态**：
+
+```
+func counter() func() int {
+    count := 0 // 闭包私有状态
+    return func() int {
+        count++
+        return count
+    }
+}
+// 使用
+c := counter()
+fmt.Println(c(), c()) // 输出1, 2
+```
+
+**6. 延迟初始化（懒加载）**
+
+闭包延迟昂贵操作，直到首次调用：
+
+```
+func lazyInit() func() string {
+    var data string // 未初始化
+    return func() string {
+        if data == "" {
+            data = expensiveOperation() // 仅执行一次
+        }
+        return data
+    }
+}
+```
+
+**闭包典型应用场景**
+
+| **场景**     | **作用**               | **示例**                        |
+| :----------- | :--------------------- | :------------------------------ |
+| **延迟执行** | goroutine中保留上下文  | `go func() { useLocalVar() }()` |
+| **函数工厂** | 动态生成不同行为的函数 | 生成不同乘数的计算函数          |
+| **中间件**   | 包装函数添加额外逻辑   | HTTP请求日志记录                |
+| **状态封装** | 模拟私有变量           | 计数器、缓存器                  |
+
 ## **二、map相关**
 
 ### 1、map 使用注意的点，是否并发安全？
@@ -888,6 +998,15 @@ Go 语言的垃圾回收（Garbage Collection，简称 GC）是通过自动内�
 6）在 interface 类型上调用方法。
 
 #### 2.1、go的逃逸分析是怎么分析的？
+
+##### **(1) 使用`go build`命令分析**
+
+```
+go build -gcflags="-m -l" main.go
+```
+
+- `-m`：打印逃逸分析结果
+- `-l`：禁用内联优化（避免干扰分析）
 
 逃逸分析基本流程如下：
 
