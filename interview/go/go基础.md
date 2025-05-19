@@ -62,7 +62,7 @@ var b uint8 =1
 
 a+b = 0总之类型溢出会出现难以意料的事
 
-![img](image/go基础.images/v2-5bf5e213ce315a16d0b7e65ef41cc685_b.webp)
+![img](./image/go基础.images/v2-5bf5e213ce315a16d0b7e65ef41cc685_b.webp)
 
 ### **6、能介绍下 rune 类型吗？**
 
@@ -593,7 +593,7 @@ sync.Map 主类中包含以下核心字段：
 
 （4）mu：一把**互斥锁**，实现 dirty 和 misses 的并发管理.
 
-![](Tartarnus/image/go基础.images/v2-b639f56e56b355507d16932e63f55e19_720w.webp)
+![](./Tartarnus/image/go基础.images/v2-b639f56e56b355507d16932e63f55e19_720w.webp)
 
 ### **9、Rehashing后，hash如何找到键值？**
 
