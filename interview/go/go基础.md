@@ -147,7 +147,7 @@ capmem = roundupsize(uintptr(newcap) * ptrSize)
 newcap = int(capmem / ptrSize)
 ```
 
-这个函数的实现就不在这里深入了，先挖一个坑，以后再来补上。
+
 
 ### **10、Go 的 select 底层数据结构和一些特性？**
 
@@ -374,7 +374,7 @@ map的类型是map[key]，key类型的ke必须是可比较的，通常情况，�
 
 **第一，**一定要先初始化，否则panic
 
-**第二，**map类型是容易发生并发访问问题的。不注意就容易发生程序运行时并发读写导致的fatal error。 Go语言内建的map对象不是线程安全的，并发读写的时候运行时会有检查，遇到并发问题就会导致fatal error，发生此错误时不能被捕获直接退出。
+**第二，**map类型是容易发生并发访问问题的。不注意就容易发生程序运行时并发读写导致的**fatal error**。 Go语言内建的map对象不是线程安全的，并发读写的时候运行时会有检查，遇到并发问题就会导致**fatal error**，发生此错误时不能被捕获直接退出。
 
 ### 2、map 循环是有序的还是无序的？
 
@@ -720,6 +720,29 @@ ctx, cancel := context.WithTimeout(context.Background(), 2 * time.Second)
 总结：Go 语言的通道利用互斥锁、条件变量和内存屏障等同步机制来实现线程安全。通过这些机制的协同作用，通道能够保证数据的有序访问和一致性，在多个 goroutine 之间提供安全的并发通信和共享数据的方式。
 
 ### 2、channel的底层实现？
+
+```go
+type hchan struct {
+	qcount   uint           // total data in the queue
+	dataqsiz uint           // size of the circular queue
+	buf      unsafe.Pointer // points to an array of dataqsiz elements
+	elemsize uint16
+	closed   uint32
+	elemtype *_type // element type
+	sendx    uint   // send index
+	recvx    uint   // receive index
+	recvq    waitq  // list of recv waiters
+	sendq    waitq  // list of send waiters
+
+	// lock protects all fields in hchan, as well as several
+	// fields in sudogs blocked on this channel.
+	//
+	// Do not change another G's status while holding this lock
+	// (in particular, do not ready a G), as this can deadlock
+	// with stack shrinking.
+	lock mutex
+}
+```
 
 **1、缓存区指针（循环数组）**
 
